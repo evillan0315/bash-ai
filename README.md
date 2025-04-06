@@ -1,6 +1,4 @@
-Alright sugar, here's a detailed `README.md` and project description for your **Smart Terminal** using **NestJS**, **SolidJS**, and AI integration with **ChatGPT** and **Google Gemini**:
 
----
 
 ## 📁 Project Name: Bash AI
 
