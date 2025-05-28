@@ -1,8 +1,7 @@
-
-
 ## 📁 Project Name: Bash AI
 
 ### 🧠 Description
+
 **Smart Terminal AI** is an intelligent, web-based terminal interface powered by NestJS and SolidJS, integrated with state-of-the-art AI models like **ChatGPT** and **Google Gemini**. This smart terminal allows users to interact with system commands, code snippets, and AI assistance in real-time—blending traditional shell-like functionality with natural language processing capabilities.
 
 Ideal for developers, tech educators, and productivity enthusiasts, this platform streamlines command execution, automates troubleshooting, and acts as your AI-powered development assistant.
@@ -12,32 +11,38 @@ Ideal for developers, tech educators, and productivity enthusiasts, this platfor
 ## 🚀 Features
 
 ### 💻 Terminal Interface
+
 - Interactive smart terminal in the browser (built with **SolidJS**)
 - Supports basic shell commands (via backend)
 - Context-aware command suggestions
 - Autocomplete and history tracking
 
 ### 🤖 AI Assistant Integration
+
 - Use **ChatGPT** for natural language prompts, debugging help, and code generation
 - Tap into **Google Gemini** for advanced reasoning, document analysis, and multi-modal interactions
 - AI-powered command completion and shell explanation
 - Multi-language support for development and DevOps
 
 ### 🔐 Authentication
+
 - OAuth2 with AWS Cognito (Google login support)
 - Role-based access control (RBAC)
 
 ### 📡 Realtime Communication
+
 - WebSocket-powered live command streaming
 - Live terminal feedback and AI interactions
 
 ### 🗃️ Backend Services
+
 - NestJS REST & WebSocket APIs
 - Secure command execution environment
 - Custom command & script management
 - AI prompt pipelines with retry and memory
 
 ### 📄 Documentation
+
 - Swagger API documentation with full CRUD operations for commands and sessions
 - CLI tools for developer automation
 
@@ -45,15 +50,15 @@ Ideal for developers, tech educators, and productivity enthusiasts, this platfor
 
 ## 📦 Tech Stack
 
-| Layer         | Technology                |
-|---------------|---------------------------|
-| Frontend      | SolidJS, TailwindCSS, TypeScript |
-| Backend       | NestJS, WebSocket, Prisma, TypeScript |
-| AI Services   | OpenAI (ChatGPT), Google Gemini |
-| Auth          | AWS Cognito + OAuth2 (Google) |
-| Realtime      | WebSocket (NestJS Gateway) |
-| Database      | PostgreSQL or DynamoDB (configurable) |
-| Deployment    | Docker, AWS EC2 / Lambda |
+| Layer       | Technology                            |
+| ----------- | ------------------------------------- |
+| Frontend    | SolidJS, TailwindCSS, TypeScript      |
+| Backend     | NestJS, WebSocket, Prisma, TypeScript |
+| AI Services | OpenAI (ChatGPT), Google Gemini       |
+| Auth        | AWS Cognito + OAuth2 (Google)         |
+| Realtime    | WebSocket (NestJS Gateway)            |
+| Database    | PostgreSQL or DynamoDB (configurable) |
+| Deployment  | Docker, AWS EC2 / Lambda              |
 
 ---
 
@@ -101,6 +106,7 @@ pnpm --filter frontend dev
 ## 🔐 Authentication Setup
 
 Configure AWS Cognito:
+
 1. Create a Cognito User Pool + Google Identity Provider.
 2. Update `.env` with Cognito and Google client credentials.
 3. Use provided `/auth` endpoints to login via Google.
