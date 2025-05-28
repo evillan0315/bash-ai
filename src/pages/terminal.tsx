@@ -1,9 +1,8 @@
 import { createSignal, onMount, createEffect, For, onCleanup } from 'solid-js';
 import { io, Socket } from 'socket.io-client';
-import { Icon } from '@iconify-icon/solid';
 
 interface TerminalEntry {
-  type: 'message' | 'command' | 'error';
+  type: 'message' | 'command' | 'error' | 'outputMessage';
   content: string;
 }
 
@@ -11,35 +10,28 @@ export default function Terminal() {
   const [entries, setEntries] = createSignal<TerminalEntry[]>([]);
   const [socket, setSocket] = createSignal<Socket | null>(null);
   const [cmd, setCmd] = createSignal('');
-  const [cwd, setCwd] = createSignal('/home/your-username'); // Default cwd
+  const [cwd, setCwd] = createSignal('/home/your-username');
   const [homeDir, setHomeDir] = createSignal('');
-  const [isAuth, setIsAuth] = createSignal(false);
   const [status, setStatus] = createSignal('Disconnected');
-  let outputRef: HTMLDivElement | undefined;
 
   const [showContextMenu, setShowContextMenu] = createSignal(false);
-  const [contextMenuPosition, setContextMenuPosition] = createSignal({
-    x: 0,
-    y: 0,
-  });
-  const [filteredOptions, setFilteredOptions] = createSignal([]);
-  let inputRef: HTMLInputElement | undefined;
+  const [contextMenuPosition, setContextMenuPosition] = createSignal({ x: 0, y: 0 });
+  const [filteredOptions, setFilteredOptions] = createSignal<string[]>([]);
 
+  let outputRef: HTMLDivElement | undefined;
+  let inputRef: HTMLInputElement | undefined;
+  if (inputRef) inputRef.disabled = true;
   const availableOptions = ['Switch to AI', 'Documentation', 'Donate', 'About'];
 
-  // Filter options based on input
   const updateContextMenu = (input: string) => {
-    const filtered = availableOptions.filter(
-      (opt) => opt.toLowerCase().includes(input.toLowerCase().slice(1)), // remove leading slash
-    );
-    setFilteredOptions(filtered);
+    setFilteredOptions(availableOptions.filter((opt) => opt.toLowerCase().includes(input.toLowerCase().slice(1))));
   };
+
   const handleInput = (e: InputEvent & { currentTarget: HTMLInputElement }) => {
     const value = e.currentTarget.value;
     setCmd(value);
 
     if (value.startsWith('/')) {
-      // Get position of input field
       const rect = e.currentTarget.getBoundingClientRect();
       setContextMenuPosition({ x: rect.left, y: rect.bottom });
       setShowContextMenu(true);
@@ -48,21 +40,11 @@ export default function Terminal() {
       setShowContextMenu(false);
     }
   };
-
-  const handleSelect = (option: string) => {
-    //setCmd(option);
-    setShowContextMenu(false);
+  const scrollToBottom = () => {
+    outputRef && (outputRef.scrollTop = outputRef.scrollHeight);
   };
   const addEntry = (type: TerminalEntry['type'], content: string) => {
-
     if (type === 'outputMessage' || (type === 'error' && content === 'Authentication required')) {
-      if (content === 'Authentication required') {
-        setIsAuth(false);
-        inputRef.disabled = true;
-      } else {
-        setIsAuth(true);
-        //inputRef.disabled = false;
-      }
       // Update the existing div with the ID "outputMessage"
       const outputDiv = document.getElementById('outputMessage');
       if (outputDiv) {
@@ -83,12 +65,8 @@ export default function Terminal() {
     setEntries((prev) => [...prev, { type, content }]);
     scrollToBottom();
   };
-
-  const scrollToBottom = () => {
-    if (outputRef) {
-      outputRef.scrollTop = outputRef.scrollHeight;
-    }
-  };
+  
+  
 
   const sendCommand = () => {
     if (cmd()) {
@@ -100,66 +78,39 @@ export default function Terminal() {
 
   onMount(() => {
     scrollToBottom();
-    function getCookie(name: string) {
-      const value = `${document.cookie}`;
 
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts?.pop().split(';').shift();
-      return null; // Return null if cookie doesn't exist
-    }
     const s = io(`${import.meta.env.VITE_API_URL}/terminal`, {
       transports: ['websocket'],
-      withCredentials: true, // if your backend uses cookies for auth
+      withCredentials: true,
     });
 
-    //const s = io('http://localhost:5000');
     setSocket(s);
-    // Handle successful connection
-    s.on('connect', (e) => {
-      if (!s.connected) {
-        setStatus('Connecting');
-        //addEntry('message', `${status()}`);
-      }
+
+    s.on('connect', () => {
       setStatus('Connected');
+      inputRef && (inputRef.disabled = false);
     });
 
-    // Handle error during connection
     s.on('connect_error', (err) => {
       console.error('Connection Error:', err.message);
-      inputRef.disabled = true;
+      inputRef && (inputRef.disabled = true);
       setStatus('Disconnected');
-      //addEntry('error', `${status()}: Connecting...`);
     });
-    // Wait for the 'osinfo' event to be emitted by the server
+
     s.on('osinfo', (info) => {
       setHomeDir(info.homedir);
-      // Emit system info received from the server
-      console.log('System Info:', info);
     });
     s.on('outputMessage', (data) => {
       addEntry('outputMessage', data);
     });
-    s.on('output', (data) => {
-      addEntry('message', data);
-    });
-
-    s.on('cwdInfo', (cwd) => {
-      addEntry('message', cwd);
-    });
-
-    s.on('error', (data) => {
-      addEntry('error', `${data}`);
-    });
-
-    s.on('close', (msg) => {
-      addEntry('message', `\n${msg}\n`);
-    });
+    s.on('output', (data) => addEntry('message', data));
+    s.on('cwdInfo', (cwd) => addEntry('message', cwd));
+    s.on('error', (data) => addEntry('error', `${data}`));
+    s.on('close', (msg) => addEntry('message', `\n${msg}\n`));
 
     s.on('prompt', ({ cwd, command }) => {
-      const home = homeDir(); // Dynamically fetch home directory
       let displayCwd = cwd;
-
-      // Convert /home/your-username to ~
+      const home = homeDir();
       if (home && cwd.startsWith(home)) {
         displayCwd = cwd.replace(home, '~');
       } else {
@@ -171,14 +122,14 @@ export default function Terminal() {
       addEntry('command', `${cwd} $ ${command}`);
     });
 
-    onCleanup(() => {
-      s.disconnect();
-    });
+    onCleanup(() => s.disconnect());
   });
-
-  createEffect(() => {
-    scrollToBottom();
-  });
+  const handleSelect = (selectedOption: string) => {
+    setCmd('');
+    setShowContextMenu(false);
+    addEntry('message', `Selected: ${selectedOption}`);
+  };
+  createEffect(scrollToBottom);
 
   return (
     <div class="flex h-screen flex-col bg-black text-white">
@@ -230,7 +181,7 @@ export default function Terminal() {
       <div
         class="flex-1 overflow-auto scroll-smooth px-4 py-2 text-sm"
         ref={outputRef}
-        style={{ scrollBehavior: 'smooth' }} // Apply smooth scroll behavior
+        style={{ 'scroll-behavior': 'smooth' }}
       >
         <div id="outputMessage" class="my-2 px-4 py-2">
           <pre class="font-normal whitespace-pre-wrap"></pre>
@@ -281,9 +232,6 @@ export default function Terminal() {
                       <path
                         fill="none"
                         stroke="#fff"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="1.5"
                         d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2M7 7h10M7 12h10M7 17h6"
                       />
                     </svg>

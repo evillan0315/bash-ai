@@ -14,15 +14,16 @@ interface TerminalInputProps {
 export default function TerminalInput(props: TerminalInputProps): JSX.Element {
   const [inputValue, setInputValue] = createSignal('');
   const [showCursor, setShowCursor] = createSignal(true);
-
+  console.log(showCursor);
   let inputRef: HTMLInputElement | undefined;
 
   const truncatePath = (path?: string) => path?.split('/').slice(-2).join('/') || path;
 
   createEffect(() => {
     const interval = setInterval(() => {
-      setShowCursor((prev) => !prev());
+      setShowCursor((prev) => !prev);
     }, 100);
+
     onCleanup(() => clearInterval(interval));
   });
 
